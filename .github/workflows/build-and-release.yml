@@ -1,0 +1,47 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Install dependencies
+      run: dotnet restore
+
+    - name: Build project
+      run: dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true --self-contained true
+
+    - name: Upload exe
+      uses: actions/upload-artifact@v2
+      with:
+        name: WindowMaximizer
+        path: ./bin/Release/net8.0-windows/win-x64/WindowMaximizer.exe
+
+  release:
+    needs: build
+    runs-on: windows-latest
+    steps:
+    - name: Download exe
+      uses: actions/download-artifact@v2
+      with:
+        name: WindowMaximizer
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ./WindowMaximizer.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
